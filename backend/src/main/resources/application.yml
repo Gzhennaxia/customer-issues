@@ -1,0 +1,270 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+  tomcat:
+    uri-encoding: UTF-8
+    max-connections: 8192
+    threads:
+      max: 200
+      min-spare: 10
+
+spring:
+  application:
+    name: customer-issue-system
+  
+  # 数据源配置
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    druid:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://localhost:3306/customer_issues_db?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
+      username: root
+      password: ${DB_PASSWORD:root123}
+      initial-size: 5
+      min-idle: 5
+      max-active: 20
+      max-wait: 60000
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      validation-query: SELECT 1 FROM DUAL
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      pool-prepared-statements: true
+      max-pool-prepared-statement-per-connection-size: 20
+      filters: stat,wall,slf4j
+      connection-properties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+      web-stat-filter:
+        enabled: true
+        url-pattern: /*
+        exclusions: "*.js,*.gif,*.jpg,*.png,*.css,*.ico,/druid/*"
+      stat-view-servlet:
+        enabled: true
+        url-pattern: /druid/*
+        reset-enable: false
+        login-username: admin
+        login-password: ${DRUID_PASSWORD:admin123}
+        allow: 127.0.0.1
+
+  # Redis配置
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: 0
+      timeout: 6000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-wait: -1ms
+          max-idle: 8
+          min-idle: 0
+
+  # 缓存配置
+  cache:
+    type: redis
+    redis:
+      time-to-live: 3600000
+      key-prefix: "customer-issue:"
+      use-key-prefix: true
+      cache-null-values: false
+
+  # 文件上传配置
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 50MB
+      file-size-threshold: 2KB
+      location: ${UPLOAD_PATH:./uploads}
+
+  # Jackson配置
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+    default-property-inclusion: NON_NULL
+    serialization:
+      write-dates-as-timestamps: false
+      fail-on-empty-beans: false
+    deserialization:
+      fail-on-unknown-properties: false
+
+  # 安全配置
+  security:
+    user:
+      name: admin
+      password: ${ADMIN_PASSWORD:admin123}
+
+# MyBatis Plus配置
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+    call-setters-on-nulls: true
+    jdbc-type-for-null: 'null'
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: AUTO
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+      update-strategy: NOT_NULL
+      insert-strategy: NOT_NULL
+      select-strategy: NOT_EMPTY
+  mapper-locations: classpath*:mapper/*.xml
+  type-aliases-package: com.customerissue.entity
+
+# Swagger文档配置
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha
+    display-request-duration: true
+    show-extensions: true
+    show-common-extensions: true
+
+# 系统监控配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env,beans,loggers
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+    info:
+      enabled: true
+  info:
+    env:
+      enabled: true
+    java:
+      enabled: true
+    os:
+      enabled: true
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.customerissue: DEBUG
+    org.springframework.security: DEBUG
+    com.baomidou.mybatisplus: DEBUG
+    druid.sql.Statement: DEBUG
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n'
+    file: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n'
+  file:
+    name: ./logs/customer-issue-system.log
+    max-size: 100MB
+    max-history: 30
+
+# 自定义配置
+app:
+  # JWT配置
+  jwt:
+    secret: ${JWT_SECRET:customerIssueSystemSecretKey2023}
+    expiration: 86400000 # 24小时
+    refresh-expiration: 604800000 # 7天
+    header: Authorization
+    prefix: "Bearer"
+  
+  # 文件上传配置
+  upload:
+    path: ${UPLOAD_PATH:./uploads/}
+    max-size: 10485760 # 10MB
+    allowed-types: jpg,jpeg,png,gif,pdf,doc,docx,txt
+    image-max-width: 1920
+    image-max-height: 1080
+  
+  # DeepSeek API配置
+  deepseek:
+    api-key: ${DEEPSEEK_API_KEY:}
+    base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
+    model: ${DEEPSEEK_MODEL:deepseek-chat}
+    timeout: 30000
+    max-retries: 3
+  
+  # Chroma向量数据库配置
+  chroma:
+    host: ${CHROMA_HOST:localhost}
+    port: ${CHROMA_PORT:8000}
+    collection-name: ${CHROMA_COLLECTION:customer-issues}
+    timeout: 30000
+  
+  # 搜索配置
+  search:
+    similarity-threshold: 0.7
+    max-results: 10
+    cache-enabled: true
+    cache-ttl: 300 # 5分钟
+  
+  # 跨域配置
+  cors:
+    allowed-origins: 
+      - "http://localhost:3000"
+      - "http://localhost:8080"
+      - "http://127.0.0.1:3000"
+      - "http://127.0.0.1:8080"
+    allowed-methods: "GET,HEAD,POST,PUT,DELETE,OPTIONS"
+    allowed-headers: "*"
+    allow-credentials: true
+    max-age: 3600
+
+# 开发环境特定配置
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  
+  datasource:
+    druid:
+      stat-view-servlet:
+        enabled: true
+  
+logging:
+  level:
+    com.customerissue: DEBUG
+
+# 测试环境配置
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+  
+  datasource:
+    druid:
+      url: jdbc:mysql://localhost:3306/customer_issues_test_db?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
+
+# 生产环境配置
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  datasource:
+    druid:
+      stat-view-servlet:
+        enabled: false
+
+logging:
+  level:
+    root: WARN
+    com.customerissue: INFO
+  file:
+    name: /var/log/customer-issue-system/application.log 
